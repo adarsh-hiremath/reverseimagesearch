@@ -20,6 +20,32 @@ model = CLIPModel.from_pretrained(model_id).to(device)
 image_dir = "/Users/ahiremath/Desktop/reverseimagesearch/images/"
 target_image_path = "/Users/ahiremath/Desktop/reverseimagesearch/target.webp"
 
+def parse_url():
+    # Read the content of the input text file
+    with open(input_text_file, "r") as file:
+        links = file.readlines()
+
+    # Iterate through each link
+    for link in links:
+        file_url = link.strip()
+
+        # Check if the URL is valid
+        if file_url.startswith("https://di2ponv0v5otw.cloudfront.net"):
+            # Get the file name from the URL
+            file_name = file_url.split("/")[-1]
+
+            # Set the path to save the downloaded image
+            download_path = os.path.join(download_directory, file_name)
+
+            # Download and save the image
+            try:
+                response = requests.get(file_url)
+                with open(download_path, "wb") as download_file:
+                    download_file.write(response.content)
+                print(f"Downloaded '{file_name}' to '{download_path}'")
+            except Exception as e:
+                print(f"Error downloading '{file_name}': {e}")
+
 def generate_embedding(image_path):
     """Generate an embedding for an image."""
     image = Image.open(image_path)
@@ -52,7 +78,7 @@ def get_top_3_matches(target_embedding, embeddings, df):
     scores.pop(-1)
     
     # get indices of top 3 matches
-    top_3_indices = sorted(range(len(scores)), key=lambda x: scores[x], reverse=True)[:3]
+    top_3_indices = sorted(range(len(scores)), key=lambda x: scores[x], reverse=True)[:30]
     
     # create list of top 3 matches and their cosine similarity scores
     matches = [(j, scores[j]) for j in top_3_indices]
@@ -85,28 +111,4 @@ for image_path in top_3_matches:
     print(image_path)
 
 
-def parse_url():
-    # Read the content of the input text file
-    with open(input_text_file, "r") as file:
-        links = file.readlines()
 
-    # Iterate through each link
-    for link in links:
-        file_url = link.strip()
-
-        # Check if the URL is valid
-        if file_url.startswith("https://di2ponv0v5otw.cloudfront.net"):
-            # Get the file name from the URL
-            file_name = file_url.split("/")[-1]
-
-            # Set the path to save the downloaded image
-            download_path = os.path.join(download_directory, file_name)
-
-            # Download and save the image
-            try:
-                response = requests.get(file_url)
-                with open(download_path, "wb") as download_file:
-                    download_file.write(response.content)
-                print(f"Downloaded '{file_name}' to '{download_path}'")
-            except Exception as e:
-                print(f"Error downloading '{file_name}': {e}")
