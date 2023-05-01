@@ -10,9 +10,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from requestModel import RequestModel
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
-import queue
-import threading
-import urllib.request
+import asyncio
 
 finaldata = []
 app = FastAPI()
@@ -86,72 +84,6 @@ def gen_target_embedding(query: str) -> torch.Tensor:
     return embedding
 
 
-import queue
-import threading
-import urllib.request
-from io import BytesIO
-
-def perform_web_requests(addresses, no_workers):
-    class Worker(threading.Thread):
-        def __init__(self, request_queue):
-            threading.Thread.__init__(self)
-            self.queue = request_queue
-            self.results = []
-
-        def run(self):
-            while True:
-                content = self.queue.get()
-                if content == "":
-                    break
-                request = urllib.request.Request(content)
-                response = urllib.request.urlopen(request)
-                self.results.append(response.read())
-                self.queue.task_done()
-
-    # Create queue and add addresses
-    q = queue.Queue()
-    for url in addresses:
-        q.put(url)
-
-    # Workers keep working till they receive an empty string
-    for _ in range(no_workers):
-        q.put("")
-
-    # Create workers and add to the queue
-    workers = []
-    for _ in range(no_workers):
-        worker = Worker(q)
-        worker.start()
-        workers.append(worker)
-    # Join workers to wait until they are finished
-    for worker in workers:
-        worker.join()
-
-    # Combine results from all workers and make a 2D DataFrame where col 1 is 'image_url' and col 2 is 'content_bytes'
-    r = []
-    for worker in workers:
-        content_bytes = worker.results.pop(0)
-        # Get the url from the queue
-        r.append({'image_url': q.get(), 'content_bytes': content_bytes})
-    print('Completed all workers requests')
-    return pd.DataFrame(r)
-
-
-
-
-
-
-
-
-def process_link(link: str) -> dict:
-    try:
-        response = requests.get(link.strip(), timeout=10)
-        response.raise_for_status()
-        image_bytes = BytesIO(response.content)
-        embedding = extract_embedding(image_bytes)
-        return {'image_url': link, 'embedding': embedding.detach()}
-    except Exception as e:
-        raise ValueError(f"Error processing {link}: {e}")
 def generate_embeddings(links: List[str]) -> pd.DataFrame:
     """
         Generates the CLIP image features for all the images passed into the API. 
@@ -169,21 +101,21 @@ def generate_embeddings(links: List[str]) -> pd.DataFrame:
         raise ValueError("The list of image links is empty.")
 
     df = pd.DataFrame(columns=['image_url', 'embedding'])
+    data = []
     for link in links:
         if not link.strip():
             raise ValueError(
                 "One of the image URLs is empty or contains only whitespace.")
-
         try:
             response = requests.get(link.strip(), timeout=10)
             print(response)
             response.raise_for_status()
             image_bytes = BytesIO(response.content)
             embedding = extract_embedding(image_bytes)
-            df = pd.concat([df, pd.DataFrame({'image_url': [link], 'embedding': [embedding.detach()]})])
+            data.append({'image_url': [link], 'embedding': [embedding.detach()]})
         except Exception as e:
             raise ValueError(f"Error processing {link}: {e}")
-    return df
+    return pd.DataFrame(data)
 
 
 
@@ -249,15 +181,12 @@ async def rank_images(request: RequestModel):
             - One of the image URLs is empty or contains only whitespace.
             - There is an error opening or processing an image.
     """
-    finaldata = []
     try:
         print(request.query)
         print(request.links)
         df = generate_embeddings(request.links)
         target_embedding = gen_target_embedding(request.query)
-
         image_urls = get_matches(target_embedding, df)
-
         return {"ranked_images": image_urls}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
