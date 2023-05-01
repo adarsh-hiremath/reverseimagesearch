@@ -156,7 +156,7 @@ def get_matches(target_embedding: torch.Tensor, df: pd.DataFrame) -> List[str]:
     return image_urls
 
 
-@app.post("/rank_images/")
+@app.post("/rank_images")
 async def rank_images(query: str, links: List[str]):
     """
         This function takes in a query URL and a list of image URLs, and returns a list of the image URLs sorted by their similarity to the target image specified by the query URL. 
@@ -184,3 +184,7 @@ async def rank_images(query: str, links: List[str]):
         return {"ranked_images": image_urls}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.get('/test')
+async def test():
+    return {"test": "success"}
