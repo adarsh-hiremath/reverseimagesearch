@@ -139,7 +139,7 @@ def get_matches(target_embedding: torch.Tensor, df: pd.DataFrame) -> List[str]:
     embeddings_tensor = embeddings_tensor.view(embeddings_tensor.shape[0], -1)
 
     # Calculate the cosine similarity matrix.
-    cos_sim_matrix = cosine_similarity(embeddings_tensor.cpu().numpy())
+    cos_sim_matrix = cosine_similarity(embeddings_tensor.cpu().detach().numpy())
 
     # Get the scores for all the images except the target image.
     scores = cos_sim_matrix[-1].tolist()
