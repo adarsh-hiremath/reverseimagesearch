@@ -7,7 +7,7 @@ from io import BytesIO
 import pandas as pd
 import requests
 from sklearn.metrics.pairwise import cosine_similarity
-
+from requestModel import RequestModel
 app = FastAPI()
 
 # Check for GPU availability.
@@ -157,7 +157,7 @@ def get_matches(target_embedding: torch.Tensor, df: pd.DataFrame) -> List[str]:
 
 
 @app.post("/rank_images")
-async def rank_images(query: str, links: List[str]):
+async def rank_images(request: RequestModel):
     """
         This function takes in a query URL and a list of image URLs, and returns a list of the image URLs sorted by their similarity to the target image specified by the query URL. 
 
@@ -176,8 +176,10 @@ async def rank_images(query: str, links: List[str]):
             - There is an error opening or processing an image.
     """
     try:
-        df = generate_embeddings(links)
-        target_embedding = gen_target_embedding(query)
+        print(request.query)
+        print(request.links)
+        df = generate_embeddings(request.links)
+        target_embedding = gen_target_embedding(request.query)
 
         image_urls = get_matches(target_embedding, df)
 
