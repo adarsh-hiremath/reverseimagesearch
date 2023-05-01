@@ -8,6 +8,7 @@ import pandas as pd
 import requests
 from sklearn.metrics.pairwise import cosine_similarity
 from requestModel import RequestModel
+from concurrent.futures import ThreadPoolExecutor, as_completed
 app = FastAPI()
 
 # Check for GPU availability.
@@ -79,37 +80,41 @@ def gen_target_embedding(query: str) -> torch.Tensor:
     return embedding
 
 
+def download_image(link: str) -> tuple:
+    """
+    Download an image and return a tuple containing the link and its embedding.
+    """
+    try:
+        response = requests.get(link.strip(), timeout=10)
+        response.raise_for_status()
+        image_bytes = BytesIO(response.content)
+        embedding = extract_embedding(image_bytes)
+        return (link, embedding.detach())
+    except Exception as e:
+        raise ValueError(f"Error processing {link}: {e}")
+
 def generate_embeddings(links: List[str]) -> pd.DataFrame:
     """
-        Generates the CLIP image features for all the images passed into the API. 
-
-        Args:
-        - links (List[str]): A list of URL strings for the images to be ranked.
-
-        Returns:
-        - A pandas DataFrame containing the image URLs and their corresponding embeddings.
-
-        Raises:
-        - ValueError: If the list of image URLs is empty, or if one of the image URLs is empty or contains only whitespace, or if there is an error processing an image.
+    Generates the CLIP image features for all the images passed into the API.
     """
     if not links or len(links) == 0:
         raise ValueError("The list of image links is empty.")
 
-    df = pd.DataFrame(columns=['image_url', 'embedding'])
-    for link in links:
-        if not link.strip():
-            raise ValueError(
-                "One of the image URLs is empty or contains only whitespace.")
+    valid_links = [link for link in links if link.strip()]
 
-        try:
-            response = requests.get(link.strip(), timeout=10)
-            response.raise_for_status()
-            image_bytes = BytesIO(response.content)
-            embedding = extract_embedding(image_bytes)
-            df = pd.concat(
-                [df, pd.DataFrame({'image_url': [link], 'embedding': [embedding.detach()]})])
-        except Exception as e:
-            raise ValueError(f"Error processing {link}: {e}")
+    with ThreadPoolExecutor() as executor:
+        futures = {executor.submit(download_image, link): link for link in valid_links}
+
+        data = []
+        for future in as_completed(futures):
+            link = futures[future]
+            try:
+                result = future.result()
+                data.append({"image_url": result[0], "embedding": result[1]})
+            except Exception as e:
+                raise ValueError(f"Error processing {link}: {e}")
+
+    df = pd.DataFrame(data)
     return df
 
 
