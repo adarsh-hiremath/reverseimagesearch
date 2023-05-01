@@ -14,7 +14,9 @@ app = FastAPI()
 if torch.cuda.is_available():
     device = "cuda"
 else:
-    raise RuntimeError("This code requires a GPU for execution.")
+    print('working with cpu')
+    device = "cpu"
+
 
 # Load the model.
 model_id = "openai/clip-vit-base-patch32"
