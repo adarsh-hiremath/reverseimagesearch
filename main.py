@@ -8,11 +8,6 @@ import pandas as pd
 import requests
 from sklearn.metrics.pairwise import cosine_similarity
 from requestModel import RequestModel
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from threading import Thread
-import asyncio
-
-finaldata = []
 app = FastAPI()
 
 # Check for GPU availability.
@@ -101,22 +96,21 @@ def generate_embeddings(links: List[str]) -> pd.DataFrame:
         raise ValueError("The list of image links is empty.")
 
     df = pd.DataFrame(columns=['image_url', 'embedding'])
-    data = []
     for link in links:
         if not link.strip():
             raise ValueError(
                 "One of the image URLs is empty or contains only whitespace.")
+
         try:
             response = requests.get(link.strip(), timeout=10)
-            print(response)
             response.raise_for_status()
             image_bytes = BytesIO(response.content)
             embedding = extract_embedding(image_bytes)
-            data.append({'image_url': [link], 'embedding': [embedding.detach()]})
+            df = pd.concat(
+                [df, pd.DataFrame({'image_url': [link], 'embedding': [embedding.detach()]})])
         except Exception as e:
             raise ValueError(f"Error processing {link}: {e}")
-    return pd.DataFrame(data)
-
+    return df
 
 
 def get_matches(target_embedding: torch.Tensor, df: pd.DataFrame) -> List[str]:
@@ -186,7 +180,9 @@ async def rank_images(request: RequestModel):
         print(request.links)
         df = generate_embeddings(request.links)
         target_embedding = gen_target_embedding(request.query)
+
         image_urls = get_matches(target_embedding, df)
+
         return {"ranked_images": image_urls}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
