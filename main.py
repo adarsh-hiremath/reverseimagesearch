@@ -16,11 +16,12 @@ if torch.cuda.is_available():
 else:
     raise RuntimeError("This code requires a GPU for execution.")
 
-# Load the model. 
+# Load the model.
 model_id = "openai/clip-vit-base-patch32"
 tokenizer = CLIPTokenizerFast.from_pretrained(model_id)
 processor = CLIPProcessor.from_pretrained(model_id)
 model = CLIPModel.from_pretrained(model_id).to(device)
+
 
 def extract_embedding(image_bytes: BytesIO) -> torch.Tensor:
     """
@@ -31,7 +32,7 @@ def extract_embedding(image_bytes: BytesIO) -> torch.Tensor:
 
         Returns:
         - A torch.Tensor object containing the image features.
-        
+
         Raises:
         - ValueError: If there is an error opening the image.
     """
@@ -47,6 +48,7 @@ def extract_embedding(image_bytes: BytesIO) -> torch.Tensor:
     )['pixel_values'].to(device)
     embedding = model.get_image_features(image)
     return embedding
+
 
 def gen_target_embedding(query: str) -> torch.Tensor:
     """
@@ -74,6 +76,7 @@ def gen_target_embedding(query: str) -> torch.Tensor:
         raise ValueError(f"Error processing {query}: {e}")
     return embedding
 
+
 def generate_embeddings(links: List[str]) -> pd.DataFrame:
     """
         Generates the CLIP image features for all the images passed into the API. 
@@ -93,17 +96,20 @@ def generate_embeddings(links: List[str]) -> pd.DataFrame:
     df = pd.DataFrame(columns=['image_url', 'embedding'])
     for link in links:
         if not link.strip():
-            raise ValueError("One of the image URLs is empty or contains only whitespace.")
+            raise ValueError(
+                "One of the image URLs is empty or contains only whitespace.")
 
         try:
             response = requests.get(link.strip(), timeout=10)
             response.raise_for_status()
             image_bytes = BytesIO(response.content)
             embedding = extract_embedding(image_bytes)
-            df = pd.concat([df, pd.DataFrame({'image_url': [link], 'embedding': [embedding]})])
+            df = pd.concat(
+                [df, pd.DataFrame({'image_url': [link], 'embedding': [embedding]})])
         except Exception as e:
             raise ValueError(f"Error processing {link}: {e}")
     return df
+
 
 def get_matches(target_embedding: torch.Tensor, df: pd.DataFrame) -> List[str]:
     """
@@ -138,7 +144,8 @@ def get_matches(target_embedding: torch.Tensor, df: pd.DataFrame) -> List[str]:
     scores.pop(-1)
 
     # Sort the matches based on the scores.
-    sorted_matches = sorted(range(len(scores)), key=lambda x: scores[x], reverse=True)
+    sorted_matches = sorted(
+        range(len(scores)), key=lambda x: scores[x], reverse=True)
 
     # Get the image URLs for the sorted matches.
     matches = [(j, scores[j]) for j in sorted_matches]
@@ -146,7 +153,7 @@ def get_matches(target_embedding: torch.Tensor, df: pd.DataFrame) -> List[str]:
 
     return image_urls
 
-    
+
 @app.post("/rank_images/")
 async def rank_images(query: str, links: List[str]):
     """
@@ -175,4 +182,3 @@ async def rank_images(query: str, links: List[str]):
         return {"ranked_images": image_urls}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
