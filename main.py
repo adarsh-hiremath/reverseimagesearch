@@ -152,8 +152,7 @@ def process_link(link: str) -> dict:
         return {'image_url': link, 'embedding': embedding.detach()}
     except Exception as e:
         raise ValueError(f"Error processing {link}: {e}")
-
-def generate_embeddings(links: List[str], max_workers: int = 10) -> pd.DataFrame:
+def generate_embeddings(links: List[str]) -> pd.DataFrame:
     """
         Generates the CLIP image features for all the images passed into the API. 
 
@@ -169,24 +168,21 @@ def generate_embeddings(links: List[str], max_workers: int = 10) -> pd.DataFrame
     if not links or len(links) == 0:
         raise ValueError("The list of image links is empty.")
 
+    df = pd.DataFrame(columns=['image_url', 'embedding'])
     for link in links:
         if not link.strip():
-            raise ValueError("One of the image URLs is empty or contains only whitespace.")
+            raise ValueError(
+                "One of the image URLs is empty or contains only whitespace.")
 
-    with ThreadPoolExecutor(max_workers=30) as executor:
-        futures = {executor.submit(process_link, link): link for link in links}
-        results = []
-
-        for future in as_completed(futures):
-            link = futures[future]
-            try:
-                result = future.result()
-                print("Processed", process_link)
-                results.append(result)
-            except Exception as e:
-                raise ValueError(f"Error processing {link}: {e}")
-
-    df = pd.DataFrame(results)
+        try:
+            response = requests.get(link.strip(), timeout=10)
+            print(response)
+            response.raise_for_status()
+            image_bytes = BytesIO(response.content)
+            embedding = extract_embedding(image_bytes)
+            df = pd.concat([df, pd.DataFrame({'image_url': [link], 'embedding': [embedding.detach()]})])
+        except Exception as e:
+            raise ValueError(f"Error processing {link}: {e}")
     return df
 
 
@@ -257,7 +253,7 @@ async def rank_images(request: RequestModel):
     try:
         print(request.query)
         print(request.links)
-        df = generate_embeddings(request.links, 10)
+        df = generate_embeddings(request.links)
         target_embedding = gen_target_embedding(request.query)
 
         image_urls = get_matches(target_embedding, df)
