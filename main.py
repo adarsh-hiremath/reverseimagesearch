@@ -9,8 +9,10 @@ import requests
 from sklearn.metrics.pairwise import cosine_similarity
 from requestModel import RequestModel
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import queue, time, urllib.request
 from threading import Thread
+import queue
+import threading
+import urllib.request
 
 finaldata = []
 app = FastAPI()
@@ -84,13 +86,15 @@ def gen_target_embedding(query: str) -> torch.Tensor:
     return embedding
 
 
-
-
+import queue
+import threading
+import urllib.request
+from io import BytesIO
 
 def perform_web_requests(addresses, no_workers):
-    class Worker(Thread):
+    class Worker(threading.Thread):
         def __init__(self, request_queue):
-            Thread.__init__(self)
+            threading.Thread.__init__(self)
             self.queue = request_queue
             self.results = []
 
@@ -113,26 +117,24 @@ def perform_web_requests(addresses, no_workers):
     for _ in range(no_workers):
         q.put("")
 
-    # Create workers and add tot the queue
+    # Create workers and add to the queue
     workers = []
     for _ in range(no_workers):
         worker = Worker(q)
         worker.start()
         workers.append(worker)
-    # Join workers to wait till they finished
+    # Join workers to wait until they are finished
     for worker in workers:
         worker.join()
 
-    # Combine results from all workers and make a 2d data frame where col 1 is url and col2 is embedding
+    # Combine results from all workers and make a 2D DataFrame where col 1 is 'image_url' and col 2 is 'content_bytes'
     r = []
     for worker in workers:
-        image_bytes = BytesIO(worker.results[0])
-        embedding = extract_embedding(image_bytes)
-        #get the url from the queue
-        r.append({'image_url': q.get(), 'embedding': embedding.detach()})
+        content_bytes = worker.results.pop(0)
+        # Get the url from the queue
+        r.append({'image_url': q.get(), 'content_bytes': content_bytes})
     print('Completed all workers requests')
     return pd.DataFrame(r)
-
 
 
 
@@ -255,7 +257,7 @@ async def rank_images(request: RequestModel):
     try:
         print(request.query)
         print(request.links)
-        df = generate_embeddings(request.links, 10)
+        df = perform_web_requests(request.links, 10)
         target_embedding = gen_target_embedding(request.query)
 
         image_urls = get_matches(target_embedding, df)
