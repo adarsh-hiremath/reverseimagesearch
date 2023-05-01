@@ -96,6 +96,7 @@ def generate_embeddings(links: List[str]) -> pd.DataFrame:
 
     df = pd.DataFrame(columns=['image_url', 'embedding'])
     data = []
+    c=0
     for link in links:
         if not link.strip():
             raise ValueError(
@@ -103,11 +104,13 @@ def generate_embeddings(links: List[str]) -> pd.DataFrame:
 
         try:
             response = requests.get(link.strip(), timeout=10)
-            print(response)
+            c+=1
+            print('Request completed successfully for: ', c)
             response.raise_for_status()
             image_bytes = BytesIO(response.content)
             embedding = extract_embedding(image_bytes)
             data.append({'image_url': link, 'embedding': embedding.detach()})
+            print('Embedding concatinated successfully for: ', c)
             # df = pd.concat([df, pd.DataFrame({'image_url': [link], 'embedding': [embedding.detach()]})])
         except Exception as e:
             raise ValueError(f"Error processing {link}: {e}")
