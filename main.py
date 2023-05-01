@@ -257,7 +257,7 @@ async def rank_images(request: RequestModel):
     try:
         print(request.query)
         print(request.links)
-        df = perform_web_requests(request.links, 10)
+        df = generate_embeddings(request.links, 10)
         target_embedding = gen_target_embedding(request.query)
 
         image_urls = get_matches(target_embedding, df)
