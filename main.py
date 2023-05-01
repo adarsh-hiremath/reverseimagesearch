@@ -8,6 +8,11 @@ import pandas as pd
 import requests
 from sklearn.metrics.pairwise import cosine_similarity
 from requestModel import RequestModel
+
+import queue, time, urllib.request
+from threading import Thread
+
+finaldata = []
 app = FastAPI()
 
 # Check for GPU availability.
@@ -77,6 +82,62 @@ def gen_target_embedding(query: str) -> torch.Tensor:
     except Exception as e:
         raise ValueError(f"Error processing {query}: {e}")
     return embedding
+
+
+
+
+
+def perform_web_requests(addresses, no_workers):
+    class Worker(Thread):
+        def __init__(self, request_queue):
+            Thread.__init__(self)
+            self.queue = request_queue
+            self.results = []
+
+        def run(self):
+            while True:
+                content = self.queue.get()
+                if content == "":
+                    break
+                request = urllib.request.Request(content)
+                response = urllib.request.urlopen(request)
+                self.results.append(response.read())
+                self.queue.task_done()
+
+    # Create queue and add addresses
+    q = queue.Queue()
+    for url in addresses:
+        q.put(url)
+
+    # Workers keep working till they receive an empty string
+    for _ in range(no_workers):
+        q.put("")
+
+    # Create workers and add tot the queue
+    workers = []
+    for _ in range(no_workers):
+        worker = Worker(q)
+        worker.start()
+        workers.append(worker)
+    # Join workers to wait till they finished
+    for worker in workers:
+        worker.join()
+
+    # Combine results from all workers and make a 2d data frame where col 1 is url and col2 is embedding
+    r = []
+    for worker in workers:
+        image_bytes = BytesIO(worker.content)
+        embedding = extract_embedding(image_bytes)
+        r.append({'image_url': worker.url, 'embedding': embedding.detach()})
+    print('Completed all workers requests')
+    return pd.DataFrame(r)
+
+
+
+
+
+
+
 
 def generate_embeddings(links: List[str]) -> pd.DataFrame:
     """
@@ -180,10 +241,11 @@ async def rank_images(request: RequestModel):
             - One of the image URLs is empty or contains only whitespace.
             - There is an error opening or processing an image.
     """
+    finaldata = []
     try:
         print(request.query)
         print(request.links)
-        df = generate_embeddings(request.links)
+        df = perform_web_requests(request.links, 10)
         target_embedding = gen_target_embedding(request.query)
 
         image_urls = get_matches(target_embedding, df)
