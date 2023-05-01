@@ -17,8 +17,8 @@ tokenizer = CLIPTokenizerFast.from_pretrained(model_id)
 processor = CLIPProcessor.from_pretrained(model_id)
 model = CLIPModel.from_pretrained(model_id).to(device)
 
-image_dir = "/Users/ahiremath/Desktop/reverseimagesearch/images/"
-target_image_path = "/Users/ahiremath/Desktop/reverseimagesearch/target.webp"
+image_dir = "/Users/harsh/mercor/reverseimagesearch/images/"
+target_image_path = "/Users/harsh/mercor/reverseimagesearch/target.webp"
 
 def parse_url():
     # Read the content of the input text file
