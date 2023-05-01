@@ -1,56 +1,51 @@
+Image Search API
+This API allows you to rank a list of images according to their similarity to a given query image. To use this API, follow the instructions below.
 
-# API Endpoint for Image Queries
+Calling the API
+You can call this API using either Python or Curl.
 
-This project deploys an API endpoint using FastAPI and Amazon EC2 to accept two parameters: a query URL with images and a list of URLs corresponding to images. 
-
-## Getting Started
-
-To use this API endpoint, you need to send a POST request to the following URL:
-
-http://[EC2_INSTANCE_IP_ADDRESS]:8000/rank_images
-
-### Prerequisites
-
-- Python 3.7 or higher installed
-- FastAPI and Uvicorn packages installed
-- An Amazon EC2 instance with a public IP address
-
-### Installing
-
-To install the required packages, run the following command:
-
-pip install fastapi uvicorn
-
-### Starting the Server
-
-To start the server, navigate to the project directory and run the following command:
-
-uvicorn main:app --host [EC2_INSTANCE_IP_ADDRESS] --port 8000
-
-## Using the API
-
-To use the API, you can send a POST request to the `/rank_images` endpoint with the following parameters:
-
-- `query` (string): the URL of the query image
-- `links` (list): a list of URLs corresponding to the images to compare against the query image
-
-Example Request:
+Python Example
+Here's an example Python code snippet that shows how to call the API:
 
 import requests
+import json
 
-query_url = 'https://example.com/query.jpg'
-image_urls = ['https://example.com/image1.jpg', 'https://example.com/image2.jpg']
+def main():
+    url = "https://imagesearch.backend.mercor.io/rank_images"
+    body = {
+        "query":"https://nb.scene7.com/is/image/NB/bbw550bb_nb_02_i?$dw_detail_main_lg$&bgc=f1f1f1&layer=1&bgcolor=f1f1f1&blendMode=mult&scale=10&wid=1600&hei=1600",
+        "links":[
+            "https://di2ponv0v5otw.cloudfront.net/posts/2022/05/04/6272f4a13751f5ea760832fb/s_wp_6272fa5c941f175a1ce82807.webp",
+            "https://di2ponv0v5otw.cloudfront.net/posts/2022/11/10/636da131046d74db9f3b6e49/s_wp_636da1b1dff94d691895db7f.webp"
+        ]
+    }
 
-response = requests.post('http://[EC2_INSTANCE_IP_ADDRESS]:8000/rank_images', json={'query': query_url, 'links': image_urls})
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    res = requests.post(url, data=json.dumps(body), headers=headers)
+    print(res.json())
 
-print(response.json())
 
-Example Response:
+if __name__ == "__main__":
+    main()
 
-```json
-{
-    "ranked_images": [
-        "https://example.com/image1.jpg",
-        "https://example.com/image2.jpg"
-    ]
-}
+Make sure to replace the query field with the URL of your query image and the links field with a list of URLs to your images to be ranked.
+
+Curl Example
+Here's an example Curl command that shows how to call the API:
+
+curl --location 'https://imagesearch.backend.mercor.io/rank_images' \
+--header 'Content-Type: application/json' \
+--data '{
+  "query":"https://nb.scene7.com/is/image/NB/bbw550bb_nb_02_i?$dw_detail_main_lg$&bgc=f1f1f1&layer=1&bgcolor=f1f1f1&blendMode=mult&scale=10&wid=1600&hei=1600",
+  "links":[
+      "https://di2ponv0v5otw.cloudfront.net/posts/2022/05/04/6272f4a13751f5ea760832fb/s_wp_6272fa5c941f175a1ce82807.webp",
+      "https://di2ponv0v5otw.cloudfront.net/posts/2022/11/10/636da131046d74db9f3b6e49/s_wp_636da1b1dff94d691895db7f.webp"
+  ]
+}'
+
+Make sure to replace the query field with the URL of your query image and the links field with a list of URLs to your images to be ranked.
+
+Response
+The API returns a JSON object containing a list of image URLs ranked in descending order of similarity to the query image.
