@@ -126,7 +126,7 @@ def perform_web_requests(addresses, no_workers):
     # Combine results from all workers and make a 2d data frame where col 1 is url and col2 is embedding
     r = []
     for worker in workers:
-        image_bytes = BytesIO(worker.content)
+        image_bytes = BytesIO(worker.results[0])
         embedding = extract_embedding(image_bytes)
         r.append({'image_url': worker.url, 'embedding': embedding.detach()})
     print('Completed all workers requests')
