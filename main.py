@@ -128,7 +128,8 @@ def perform_web_requests(addresses, no_workers):
     for worker in workers:
         image_bytes = BytesIO(worker.results[0])
         embedding = extract_embedding(image_bytes)
-        r.append({'image_url': worker.url, 'embedding': embedding.detach()})
+        #get the url from the queue
+        r.append({'image_url': q.get(), 'embedding': embedding.detach()})
     print('Completed all workers requests')
     return pd.DataFrame(r)
 
