@@ -171,7 +171,7 @@ def generate_embeddings(links: List[str], max_workers: int = 10) -> pd.DataFrame
         if not link.strip():
             raise ValueError("One of the image URLs is empty or contains only whitespace.")
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    with ThreadPoolExecutor(max_workers=30) as executor:
         futures = {executor.submit(process_link, link): link for link in links}
         results = []
 
@@ -179,6 +179,7 @@ def generate_embeddings(links: List[str], max_workers: int = 10) -> pd.DataFrame
             link = futures[future]
             try:
                 result = future.result()
+                print("Processed", process_link)
                 results.append(result)
             except Exception as e:
                 raise ValueError(f"Error processing {link}: {e}")
