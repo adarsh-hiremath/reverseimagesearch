@@ -101,7 +101,7 @@ def generate_embeddings(links: List[str]) -> pd.DataFrame:
 
     valid_links = [link for link in links if link.strip()]
 
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         futures = {executor.submit(download_image, link): link for link in valid_links}
 
         data = []
@@ -115,6 +115,7 @@ def generate_embeddings(links: List[str]) -> pd.DataFrame:
 
     df = pd.DataFrame(data)
     return df
+
 
 def get_matches(target_embedding: torch.Tensor, df: pd.DataFrame) -> List[str]:
     """
