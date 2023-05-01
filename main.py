@@ -107,7 +107,7 @@ def generate_embeddings(links: List[str]) -> pd.DataFrame:
             response.raise_for_status()
             image_bytes = BytesIO(response.content)
             embedding = extract_embedding(image_bytes)
-            data.append({'image_url': link, 'embedding': embedding.detach()}, ignore_index=True)
+            data.append({'image_url': link, 'embedding': embedding.detach()})
             # df = pd.concat([df, pd.DataFrame({'image_url': [link], 'embedding': [embedding.detach()]})])
         except Exception as e:
             raise ValueError(f"Error processing {link}: {e}")
