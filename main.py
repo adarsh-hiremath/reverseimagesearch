@@ -14,6 +14,7 @@ import ssl
 import base64
 import json
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 app = FastAPI()
 
 # Check for GPU availability.
@@ -22,7 +23,7 @@ if torch.cuda.is_available():
 else:
     print('working with cpu')
     device = "cpu"
-
+data = []
 
 # Load the model.
 model_id = "openai/clip-vit-base-patch32"
@@ -34,8 +35,8 @@ model = CLIPModel.from_pretrained(model_id).to(device)
 
 async def call_cloud_function(session, image_url):
     # Prepare the request URL and headers
-    url = "https://stream-images-62xutbvi7a-uc.a.run.app/"
-    headers = {'Content-Type': 'application/json','Authorization':'Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImM5YWZkYTM2ODJlYmYwOWViMzA1NWMxYzRiZDM5Yjc1MWZiZjgxOTUiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIzMjU1NTk0MDU1OS5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImF1ZCI6IjMyNTU1OTQwNTU5LmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwic3ViIjoiMTA4OTAyNjUyMjg4MTEyNjM1MjY1IiwiZW1haWwiOiJ0cml2ZWRpaGFyc2g0OUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiYXRfaGFzaCI6Ik0xVk5xV05vMjNrbXBXWGs2cWtvT1EiLCJpYXQiOjE2ODMwMjkzNjcsImV4cCI6MTY4MzAzMjk2N30.fPkx9yL4pm-4UKexboaA29Ht50KKyCINRwc6SULfNkO34LmbwQpavbTWSONfRJFbKChhy-Eyiw4jqni2J7H-et7yGqTBN4b3rSJr3iyFqJg9seNc_2qvgHjnD0nTBVHLAcOftyo3eV1_xGQY5uq0v8N8ESzcf5FvTuwjOejBOyakv9eu0rvn7kVyRljj34KJY8bEE5jfJA27dXT_jm-ZKHMv6_GeV9LuHmmTiVrIY0ydn601krWyDCCKOQWFyJqVYmuxjKWvdGboJgYerX_GaMGwKtepZy0sUK94q9iWaEuTMFWNmzLle7vf640LDwvB1Z3nfc2VXiLlnrYuGPV0VA'}
+    url = "https://download-streamed-images-62xutbvi7a-uc.a.run.app/"
+    headers = {'Content-Type': 'application/json'}
     payload = {'image_url': image_url}
 
     # Make the HTTP POST request
@@ -44,11 +45,12 @@ async def call_cloud_function(session, image_url):
         response_text = await response.text()
         json_result = json.loads(response_text)
         base64_str = json_result['image_bytes']
-        print(json_result['image_url'])
+        print('After API Call',json_result['image_url'])
         image_bytes = base64.b64decode(base64_str)
         image_bytes_io = BytesIO(image_bytes)
+        
         embeddings = extract_embedding(image_bytes_io)
-        return {"bytes":image_bytes_io,"url":json_result['image_url'],"embedding":embeddings,"status":"success"}
+        return {'image_url':json_result['image_url'],'embedding':embeddings}
 
 async def callConcurrent(links) -> pd.DataFrame:
     # Create an SSL context to bypass SSL verification
@@ -208,6 +210,30 @@ def get_matches(target_embedding: torch.Tensor, df: pd.DataFrame) -> List[str]:
     return image_urls
 
 
+async def handle_urls(image_urls):
+    # Create an SSL context to bypass SSL verification
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+    
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
+        tasks = [call_cloud_function(session, image_url) for image_url in image_urls]
+        results = await asyncio.gather(*tasks)
+        # Print the results of each call
+        for result in results:
+            print('Final Result ',result['image_url'])
+            data.append(result)
+
+def thread_main(image_urls):
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S:%SS")
+    print("Start Time =", current_time)
+    asyncio.run(handle_urls(image_urls))
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S:%SS")
+    print("Final End Time =", current_time)
+
+
 @app.post("/rank_images")
 async def rank_images(request: RequestModel):
     """
@@ -228,13 +254,31 @@ async def rank_images(request: RequestModel):
             - There is an error opening or processing an image.
     """
     try:
-        print(request.query)
-        print(request.links)
-        df = await callConcurrent(request.links)
+        global data
+        data = []
+        # print(request.query)
+        # print(request.links)
+        # df = await callConcurrent(request.links)
+        # target_embedding = gen_target_embedding(request.query)
+
+        # image_urls = get_matches(target_embedding, df)
+        num_threads = 4
+
+        # Split the image URLs into chunks for each thread
+        chunks = [request.links[i::num_threads] for i in range(num_threads)]
+
+        # Create a ThreadPoolExecutor to handle parallel requests
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            # Run the thread_main function for each chunk of image URLs in parallel
+            executor.map(thread_main, chunks)
+
+        # How to know if all the threads are done?
+        print('All threads are done!')
+        print(len(data))
+        df = pd.DataFrame(data)
         target_embedding = gen_target_embedding(request.query)
-
         image_urls = get_matches(target_embedding, df)
-
+        print(image_urls)
         return {"ranked_images": image_urls}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
