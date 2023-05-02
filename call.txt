@@ -1,9 +1,8 @@
-curl --request POST \
-  --url http://3.86.190.39:8000/rank_images \
-  --header 'content-type: application/json' \
-  --data '{
+curl --location 'https://imagesearch.backend.mercor.io/rank_images' \
+--header 'Content-Type: application/json' \
+--data '{
   "query":"https://nb.scene7.com/is/image/NB/bbw550bb_nb_02_i?$dw_detail_main_lg$&bgc=f1f1f1&layer=1&bgcolor=f1f1f1&blendMode=mult&scale=10&wid=1600&hei=1600",
-  "links":[ 
+  "links":[
   "https://di2ponv0v5otw.cloudfront.net/posts/2022/05/04/6272f4a13751f5ea760832fb/s_wp_6272fa5c941f175a1ce82807.webp",
 "https://di2ponv0v5otw.cloudfront.net/posts/2022/11/10/636da131046d74db9f3b6e49/s_wp_636da1b1dff94d691895db7f.webp",
 "https://di2ponv0v5otw.cloudfront.net/posts/2022/05/17/6283ae38c693bd6a58c90b7e/s_wp_6283ae9d9c33781543188976.webp",
@@ -24,6 +23,5 @@ curl --request POST \
  "https://di2ponv0v5otw.cloudfront.net/posts/2023/04/06/642edae54bd7602040e844ba/s_wp_642edbf9ffb5d07f4eb70ace.webp",
  "https://di2ponv0v5otw.cloudfront.net/posts/2022/10/16/634c9aba8d7a3c24642b9753/s_wp_634c9ac6a0e6c649fb524183.webp",
  "https://di2ponv0v5otw.cloudfront.net/posts/2022/05/04/627304ea45d73159d7eb8009/s_wp_627306ea3e732b9b3fb65b71.webp",
- "https://di2ponv0v5otw.cloudfront.net/posts/2023/03/28/6423086ebc6e1c9acef06a80/s_wp_64230884382db83aff2f6937.webp",
-  ]
+ "https://di2ponv0v5otw.cloudfront.net/posts/2023/03/28/6423086ebc6e1c9acef06a80/s_wp_64230884382db83aff2f6937.webp" ]
 }'

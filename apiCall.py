@@ -1,0 +1,39 @@
+import requests
+import json
+
+def main():
+    url = "https://imagesearch.backend.mercor.io/rank_images"
+    body = {
+  "query":"https://nb.scene7.com/is/image/NB/bbw550bb_nb_02_i?$dw_detail_main_lg$&bgc=f1f1f1&layer=1&bgcolor=f1f1f1&blendMode=mult&scale=10&wid=1600&hei=1600",
+  "links":[
+    "https://di2ponv0v5otw.cloudfront.net/posts/2022/05/04/6272f4a13751f5ea760832fb/s_wp_6272fa5c941f175a1ce82807.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2022/11/10/636da131046d74db9f3b6e49/s_wp_636da1b1dff94d691895db7f.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2022/05/17/6283ae38c693bd6a58c90b7e/s_wp_6283ae9d9c33781543188976.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/03/03/6402488bdbb0e72c27751303/s_wp_640248a492e491cc620af5e1.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/01/26/63d344aec9a22876ee878984/s_wp_63d344bdffb5d0480778770b.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/02/05/63dfddbe3676a105f3c4ea99/s_wp_63dfddbe3676a105f3c4ea9a.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2022/12/27/63ab38d232c1dc6122705815/s_63bf28b9a0aeb7974b9889c1.jpg",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/02/02/63dc34ee8bb2e28b9c2bd469/s_63f448b9a0aeb7ffc98a442f.jpg",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/04/22/644467589464f368279f7cb4/s_64446763f644e523964f80b7.jpg",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/04/22/644466ac382db80ee4f6cfc3/s_644466b98d7a3cdff628d6d0.jpg",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/04/13/6438395649d8d87fcacdc1a8/s_wp_6438395649d8d87fcacdc1a9.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/04/17/643d68341741be8489176d0a/s_wp_643d69ffa0e6c69cc7c5bf0c.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/04/18/643f4f4881078affa0b7caf6/s_wp_643f4f77b635f8c7ddf5238e.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2022/09/15/632383c42ca3080c96f83f26/s_wp_632383c54bd760ba964ebdbc.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/03/25/641f9bd9948fa025f014a253/s_wp_641f9bd9948fa025f014a254.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/01/28/63d5aa01452746969cc9edb7/s_wp_63d5aad6a0e6c6c21c61e92b.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/02/17/63f02d8717fb4b59b7e8628a/s_wp_63f02d8a17fb4b59b7e862b5.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/04/06/642edae54bd7602040e844ba/s_wp_642edbf9ffb5d07f4eb70ace.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2022/10/16/634c9aba8d7a3c24642b9753/s_wp_634c9ac6a0e6c649fb524183.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2022/05/04/627304ea45d73159d7eb8009/s_wp_627306ea3e732b9b3fb65b71.webp",
+    "https://di2ponv0v5otw.cloudfront.net/posts/2023/03/28/6423086ebc6e1c9acef06a80/s_wp_64230884382db83aff2f6937.webp" ]}
+
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    res = requests.post(url, data=json.dumps(body), headers=headers)
+    print(res.json())
+
+
+if __name__ == "__main__":
+    main()

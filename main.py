@@ -8,6 +8,12 @@ import pandas as pd
 import requests
 from sklearn.metrics.pairwise import cosine_similarity
 from requestModel import RequestModel
+import asyncio
+import aiohttp
+import ssl
+import base64
+import json
+from datetime import datetime
 app = FastAPI()
 
 # Check for GPU availability.
@@ -23,6 +29,50 @@ model_id = "openai/clip-vit-base-patch32"
 tokenizer = CLIPTokenizerFast.from_pretrained(model_id)
 processor = CLIPProcessor.from_pretrained(model_id)
 model = CLIPModel.from_pretrained(model_id).to(device)
+
+
+
+async def call_cloud_function(session, image_url):
+    # Prepare the request URL and headers
+    url = "https://stream-images-62xutbvi7a-uc.a.run.app/"
+    headers = {'Content-Type': 'application/json','Authorization':'Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImM5YWZkYTM2ODJlYmYwOWViMzA1NWMxYzRiZDM5Yjc1MWZiZjgxOTUiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIzMjU1NTk0MDU1OS5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImF1ZCI6IjMyNTU1OTQwNTU5LmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwic3ViIjoiMTA4OTAyNjUyMjg4MTEyNjM1MjY1IiwiZW1haWwiOiJ0cml2ZWRpaGFyc2g0OUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiYXRfaGFzaCI6ImxJVkVKOVgyQk5LVWFGblJoU1hGQWciLCJpYXQiOjE2ODMwMjU1MjIsImV4cCI6MTY4MzAyOTEyMn0.ACYfRNBUASZGXq6la-qecgls5KPq__RsywWPZm410pN19vz4KJh_-bQ_4i9gZ3YoSkqpgt1R2leWL0FY2DO_0emDOubWd2iLzma9az83pwsGtyckr2-C_rTnc9X2DfZlHkXCU5VoZXw4IRqLiNKbcI0JzKkDNS8G9tUBXT-Z9wmTNe9E_qyioueCbSwC9QjyPnT9ie1D42LSO-GVWuiak3frcWEmIIb-kX9pAiylqNXVl3RVRmg2EazUcNuxpA3p-1HXDySRJP30eGGOUIRgIdac_Q3u40Eyj-cS2HfbrCmg26Zb1OKfy7nZxmwMIa7kEqowQonzUwCmLn8a2Zta4A'}
+    payload = {'image_url': image_url}
+
+    # Make the HTTP POST request
+    async with session.post(url, headers=headers, json=payload) as response:
+        # Read the response content as a string
+        response_text = await response.text()
+        json_result = json.loads(response_text)
+        base64_str = json_result['image_bytes']
+        print(json_result['image_url'])
+        image_bytes = base64.b64decode(base64_str)
+        image_bytes_io = BytesIO(image_bytes)
+        embeddings = extract_embedding(image_bytes_io)
+        return {"bytes":image_bytes_io,"url":json_result['image_url'],"embedding":embeddings,"status":"success"}
+
+async def callConcurrent(links) -> pd.DataFrame:
+    # Create an SSL context to bypass SSL verification
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
+    res = []
+
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
+        sem = asyncio.Semaphore(1000)  # Limit the number of concurrent requests to 20
+        tasks = []
+
+        for link in links:
+            async with sem:
+                task = asyncio.ensure_future(call_cloud_function(session, link))
+                tasks.append(task)
+
+       
+
+        for i,result in enumerate(await asyncio.gather(*tasks)):
+            res.append({'image_url':result['url'],'embedding':result['embedding']})
+
+        return pd.DataFrame(res)
 
 
 def extract_embedding(image_bytes: BytesIO) -> torch.Tensor:
@@ -77,6 +127,8 @@ def gen_target_embedding(query: str) -> torch.Tensor:
     except Exception as e:
         raise ValueError(f"Error processing {query}: {e}")
     return embedding
+
+
 
 
 def generate_embeddings(links: List[str]) -> pd.DataFrame:
@@ -178,7 +230,7 @@ async def rank_images(request: RequestModel):
     try:
         print(request.query)
         print(request.links)
-        df = generate_embeddings(request.links)
+        df = await callConcurrent(request.links)
         target_embedding = gen_target_embedding(request.query)
 
         image_urls = get_matches(target_embedding, df)
