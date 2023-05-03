@@ -55,6 +55,7 @@ async def call_cloud_function(session, image_url):
     try:
         response = requests.get(image_url, timeout=10)
         image_bytes = BytesIO(response.content)
+        print('After API Call',image_bytes)
         embeddings = extract_embedding(image_bytes)
         return {'image_url':image_url,'embedding':embeddings}
     except Exception as e:
