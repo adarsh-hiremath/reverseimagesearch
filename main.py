@@ -15,6 +15,7 @@ import base64
 import json
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
+import requests
 app = FastAPI()
 
 # Check for GPU availability.
@@ -50,12 +51,10 @@ async def call_cloud_function(session, image_url):
     #     image_bytes_io = BytesIO(image_bytes)
         
     #     embeddings = extract_embedding(image_bytes_io)
-    #     return {'image_url':json_result['image_url'],'embedding':embeddings}
-    async with session.get(image_url) as response:
-        bytes_stream = BytesIO(response.content)
-        print(bytes_stream)
-        embeddings = extract_embedding(bytes_stream)
-        return {'image_url':image_url,'embedding':embeddings}
+    response = requests.get(image_url)
+    image_bytes = BytesIO(response.content)
+    embeddings = extract_embedding(image_bytes)
+    return {'url':image_url,'embedding':embeddings.detach()}
 
 async def callConcurrent(links) -> pd.DataFrame:
     # Create an SSL context to bypass SSL verification
