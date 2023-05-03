@@ -262,7 +262,7 @@ async def rank_images(request: RequestModel):
         # target_embedding = gen_target_embedding(request.query)
 
         # image_urls = get_matches(target_embedding, df)
-        num_threads = 4
+        num_threads = 10
 
         # Split the image URLs into chunks for each thread
         chunks = [request.links[i::num_threads] for i in range(num_threads)]
