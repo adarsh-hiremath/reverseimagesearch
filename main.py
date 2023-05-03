@@ -15,6 +15,7 @@ import base64
 import json
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
+import requests
 app = FastAPI()
 
 # Check for GPU availability.
@@ -40,17 +41,25 @@ async def call_cloud_function(session, image_url):
     payload = {'image_url': image_url}
 
     # Make the HTTP POST request
-    async with session.post(url, headers=headers, json=payload) as response:
-        # Read the response content as a string
-        response_text = await response.text()
-        json_result = json.loads(response_text)
-        base64_str = json_result['image_bytes']
-        print('After API Call',json_result['image_url'])
-        image_bytes = base64.b64decode(base64_str)
-        image_bytes_io = BytesIO(image_bytes)
+    # async with session.post(url, headers=headers, json=payload) as response:
+    #     # Read the response content as a string
+    #     response_text = await response.text()
+    #     json_result = json.loads(response_text)
+    #     base64_str = json_result['image_bytes']
+    #     print('After API Call',json_result['image_url'])
+    #     image_bytes = base64.b64decode(base64_str)
+    #     image_bytes_io = BytesIO(image_bytes)
         
-        embeddings = extract_embedding(image_bytes_io)
-        return {'image_url':json_result['image_url'],'embedding':embeddings}
+    #     embeddings = extract_embedding(image_bytes_io)
+    #     return {'image_url':json_result['image_url'],'embedding':embeddings}
+    try:
+        response = requests.get(image_url, timeout=10)
+        image_bytes = BytesIO(response.content)
+        embeddings = extract_embedding(image_bytes)
+        return {'image_url':image_url,'embedding':embeddings}
+    except Exception as e:
+        print(e)
+        return {'image_url':image_url,'embedding':None}
 
 async def callConcurrent(links) -> pd.DataFrame:
     # Create an SSL context to bypass SSL verification
