@@ -40,17 +40,22 @@ async def call_cloud_function(session, image_url):
     payload = {'image_url': image_url}
 
     # Make the HTTP POST request
-    async with session.post(url, headers=headers, json=payload) as response:
-        # Read the response content as a string
-        response_text = await response.text()
-        json_result = json.loads(response_text)
-        base64_str = json_result['image_bytes']
-        print('After API Call',json_result['image_url'])
-        image_bytes = base64.b64decode(base64_str)
-        image_bytes_io = BytesIO(image_bytes)
+    # async with session.post(url, headers=headers, json=payload) as response:
+    #     # Read the response content as a string
+    #     response_text = await response.text()
+    #     json_result = json.loads(response_text)
+    #     base64_str = json_result['image_bytes']
+    #     print('After API Call',json_result['image_url'])
+    #     image_bytes = base64.b64decode(base64_str)
+    #     image_bytes_io = BytesIO(image_bytes)
         
-        embeddings = extract_embedding(image_bytes_io)
-        return {'image_url':json_result['image_url'],'embedding':embeddings}
+    #     embeddings = extract_embedding(image_bytes_io)
+    #     return {'image_url':json_result['image_url'],'embedding':embeddings}
+    async with session.get(image_url) as response:
+        bytes_stream = BytesIO(response.content)
+        print(bytes_stream)
+        embeddings = extract_embedding(bytes_stream)
+        return {'image_url':image_url,'embedding':embeddings}
 
 async def callConcurrent(links) -> pd.DataFrame:
     # Create an SSL context to bypass SSL verification
