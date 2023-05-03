@@ -53,6 +53,7 @@ async def call_cloud_function(session, image_url):
     #     embeddings = extract_embedding(image_bytes_io)
     response = requests.get(image_url)
     image_bytes = BytesIO(response.content)
+    print('After API Call',image_bytes)
     embeddings = extract_embedding(image_bytes)
     return {'url':image_url,'embedding':embeddings.detach()}
 
