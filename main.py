@@ -62,7 +62,7 @@ async def callConcurrent(links) -> pd.DataFrame:
     res = []
 
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
-        sem = asyncio.Semaphore(1000)  # Limit the number of concurrent requests to 20
+        sem = asyncio.Semaphore(1000)  # Limit the number of concurrent requests to 1000
         tasks = []
 
         for link in links:
@@ -208,7 +208,14 @@ def get_matches(target_embedding: torch.Tensor, df: pd.DataFrame) -> List[str]:
     matches = [(j, scores[j]) for j in sorted_matches]
     image_urls = [df.iloc[j]['image_url'] for j, _ in matches]
 
-    return image_urls
+    image_urls_with_scores = []
+    #make list of objects containing image url and score
+    for match in matches:
+        print('Image URL: ', df.iloc[match[0]]['image_url'])
+        print('Score: ', match[1])
+        image_urls_with_scores.append({'image_url': df.iloc[match[0]]['image_url'], 'cosine_similarity_score': match[1]})
+
+    return image_urls_with_scores
 
 
 async def handle_urls(image_urls):
@@ -263,7 +270,7 @@ async def rank_images(request: RequestModel):
         # target_embedding = gen_target_embedding(request.query)
 
         # image_urls = get_matches(target_embedding, df)
-        num_threads = 10
+        num_threads =5
 
         # Split the image URLs into chunks for each thread
         chunks = [request.links[i::num_threads] for i in range(num_threads)]

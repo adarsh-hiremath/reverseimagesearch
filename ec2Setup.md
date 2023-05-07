@@ -1,0 +1,4 @@
+- sudo apt install --reinstall gcc
+- sudo apt-get --purge -y remove 'nvidia*'
+- sudo apt install nvidia-driver-450 
+- sudo reboot
