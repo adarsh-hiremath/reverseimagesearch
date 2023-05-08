@@ -74,7 +74,7 @@ async def callConcurrent(links) -> pd.DataFrame:
 
         for i,result in enumerate(await asyncio.gather(*tasks)):
             res.append({'image_url':result['url'],'embedding':result['embedding']})
-
+        torch.cuda.empty_cache()
         return pd.DataFrame(res)
 
 

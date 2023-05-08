@@ -1,0 +1,21 @@
+[
+  {
+    "_id": "65a62086-e118-4ecf-a709-2ce945026994",
+    "colId": "history",
+    "containerId": "",
+    "name": "https://imagesearch.backend.mercor.io/rank_images",
+    "url": "https://imagesearch.backend.mercor.io/rank_images",
+    "method": "POST",
+    "sortNum": 0,
+    "created": "2023-05-07T20:45:11.485Z",
+    "modified": "2023-05-08T03:58:01.107Z",
+    "headers": [],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"query\": \"https://nb.scene7.com/is/image/NB/bbw550bb_nb_02_i?$dw_detail_main_lg$&bgc=f1f1f1&layer=1&bgcolor=f1f1f1&blendMode=mult&scale=10&wid=1600&hei=1600\",\n\"links\":[ \"https://di2ponv0v5otw.cloudfront.net/posts/2022/05/04/6272f4a13751f5ea760832fb/s_wp_6272fa5c941f175a1ce82807.webp\", \"https://di2ponv0v5otw.cloudfront.net/posts/2022/11/10/636da131046d74db9f3b6e49/s_wp_636da1b1dff94d691895db7f.webp\" ]\n}",
+      "form": []
+    },
+    "tests": []
+  }
+]
