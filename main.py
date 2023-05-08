@@ -104,6 +104,7 @@ def extract_embedding(image_bytes: BytesIO) -> torch.Tensor:
         return_tensors='pt'
     )['pixel_values'].to(device)
     embedding = model.get_image_features(image)
+    torch.cuda.empty_cache()
     return embedding
 
 
