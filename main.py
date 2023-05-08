@@ -50,6 +50,7 @@ async def call_cloud_function(session, image_url):
         image_bytes_io = BytesIO(image_bytes)
         
         embeddings = extract_embedding(image_bytes_io)
+        torch.cuda.empty_cache()
         return {'image_url':json_result['image_url'],'embedding':embeddings}
 
 
