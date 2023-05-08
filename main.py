@@ -49,8 +49,8 @@ async def call_cloud_function(session, image_url):
         image_bytes = base64.b64decode(base64_str)
         image_bytes_io = BytesIO(image_bytes)
         
-        embeddings = extract_embedding(image_bytes_io)
-        return {'image_url':json_result['image_url'],'embedding':embeddings,"imageBytes": image_bytes_io}
+        #embeddings = extract_embedding(image_bytes_io)
+        return {'image_url':json_result['image_url'],'embedding':"","imageBytes": image_bytes_io}
 
 
 async def callConcurrent(links) -> pd.DataFrame:
@@ -232,6 +232,10 @@ async def handle_urls(image_urls):
         # Print the results of each call
         for result in results:
             print('Final Result ',result['image_url'])
+            embeddingFinal =extract_embedding(result['imageBytes'])
+
+            result['embedding'] = embeddingFinal
+
             data.append(result)
 
 def thread_main(image_urls):
@@ -272,7 +276,7 @@ async def rank_images(request: RequestModel):
         # target_embedding = gen_target_embedding(request.query)
 
         # image_urls = get_matches(target_embedding, df)
-        num_threads =3
+        num_threads =5
 
         # Split the image URLs into chunks for each thread
         chunks = [request.links[i::num_threads] for i in range(num_threads)]
