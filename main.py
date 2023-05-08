@@ -49,9 +49,8 @@ async def call_cloud_function(session, image_url):
         image_bytes = base64.b64decode(base64_str)
         image_bytes_io = BytesIO(image_bytes)
         
-        embeddings = extract_embedding(image_bytes_io)
-        torch.cuda.empty_cache()
-        return {'image_url':json_result['image_url'],'embedding':embeddings}
+        #embeddings = extract_embedding(image_bytes_io)
+        return {'image_url':json_result['image_url'],'img_bytes':image_bytes_io}
 
 
 async def callConcurrent(links) -> pd.DataFrame:
@@ -74,7 +73,8 @@ async def callConcurrent(links) -> pd.DataFrame:
        
 
         for i,result in enumerate(await asyncio.gather(*tasks)):
-            res.append({'image_url':result['url'],'embedding':result['embedding']})
+            embeddings = extract_embedding(result['img_bytes'])
+            res.append({'image_url':result['url'],'embedding':embeddings})
         torch.cuda.empty_cache()
         return pd.DataFrame(res)
 
