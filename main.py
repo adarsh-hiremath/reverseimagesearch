@@ -43,6 +43,7 @@ async def post_image_urls(image_urls: List[str]):
     async with aiohttp.ClientSession() as session:
         async with session.post(endpoint, headers=headers, data=json.dumps(body)) as response:
             response_text = await response.text()
+            print("Response arrived")
             return response_text
 
 
