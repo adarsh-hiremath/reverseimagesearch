@@ -1,8 +1,9 @@
 import requests
 import json
 from concurrent.futures import ThreadPoolExecutor
+counter = 0
 def main():
-    url = "http://3.90.7.247:8000/rank_images"
+    url = "https://reverseimagesearch.backend.mercor.io/rank_images"
     body = {
 "query": "https://nb.scene7.com/is/image/NB/bbw550bb_nb_02_i?$dw_detail_main_lg$&bgc=f1f1f1&layer=1&bgcolor=f1f1f1&blendMode=mult&scale=10&wid=1600&hei=1600",
 "links" : [
@@ -84,7 +85,7 @@ def main():
         'Content-Type': 'application/json'
     }
     res = requests.post(url, data=json.dumps(body), headers=headers)
-    print(res.json())
+    print(counter)
 
 
 if __name__ == "__main__":
@@ -92,5 +93,6 @@ if __name__ == "__main__":
     # 10 threads of main function
     with ThreadPoolExecutor (max_workers=10) as executor:
         for i in range(100):
+            counter += 1
             executor.submit(main)
     

@@ -4,11 +4,11 @@
     "colId": "history",
     "containerId": "",
     "name": "https://imagesearch.backend.mercor.io/rank_images",
-    "url": "http://3.90.7.247:8000/rank_images",
+    "url": "https://reverseimagesearch.backend.mercor.io/rank_images",
     "method": "POST",
     "sortNum": 0,
     "created": "2023-05-07T20:45:11.485Z",
-    "modified": "2023-05-09T14:32:08.038Z",
+    "modified": "2023-05-09T19:00:11.428Z",
     "headers": [],
     "params": [],
     "body": {
