@@ -190,7 +190,6 @@ async def rank_images(request: RequestModel):
             base64_str = image['image_bytes']
             image_bytes = base64.b64decode(base64_str)
             image_bytes_io = BytesIO(image_bytes)
-            print("Extracting embedding for ", image['image_url'])
             embedding = extract_embedding(image_bytes_io)
             return {'image_url': image['image_url'], 'embedding': embedding}
         
@@ -208,7 +207,6 @@ async def rank_images(request: RequestModel):
         #now we make target embedding
         target_embedding = gen_target_embedding(request.query)
         image_urls = get_matches(target_embedding, df)
-        print(image_urls)
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S:%SS")
         print("Final End Time =", current_time)

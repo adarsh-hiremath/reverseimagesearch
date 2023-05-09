@@ -2,7 +2,7 @@ import requests
 import json
 from concurrent.futures import ThreadPoolExecutor
 def main():
-    url = "https://imagesearch.backend.mercor.io/rank_images"
+    url = "http://3.90.7.247:8000/rank_images"
     body = {
 "query": "https://nb.scene7.com/is/image/NB/bbw550bb_nb_02_i?$dw_detail_main_lg$&bgc=f1f1f1&layer=1&bgcolor=f1f1f1&blendMode=mult&scale=10&wid=1600&hei=1600",
 "links" : [
