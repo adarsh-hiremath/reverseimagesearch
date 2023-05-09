@@ -151,8 +151,6 @@ def get_matches(target_embedding: torch.Tensor, df: pd.DataFrame) -> List[str]:
     image_urls_with_scores = []
     #make list of objects containing image url and score
     for match in matches:
-        print('Image URL: ', df.iloc[match[0]]['image_url'])
-        print('Score: ', match[1])
         image_urls_with_scores.append({'image_url': df.iloc[match[0]]['image_url'], 'cosine_similarity_score': match[1]})
 
     return image_urls_with_scores
