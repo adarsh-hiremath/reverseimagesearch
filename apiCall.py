@@ -91,6 +91,6 @@ if __name__ == "__main__":
     main()
     # 10 threads of main function
     with ThreadPoolExecutor (max_workers=10) as executor:
-        for i in range(10):
+        for i in range(100):
             executor.submit(main)
     
