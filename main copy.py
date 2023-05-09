@@ -32,20 +32,6 @@ processor = CLIPProcessor.from_pretrained(model_id)
 model = CLIPModel.from_pretrained(model_id).to(device)
 
 
-async def post_image_urls(image_urls: List[str]):
-    endpoint = "https://download-streamed-images-62xutbvi7a-uc.a.run.app"
-    headers = {"Content-Type": "application/json"}
-
-    body = {
-        "image_urls": image_urls
-    }
-
-    async with aiohttp.ClientSession() as session:
-        async with session.post(endpoint, headers=headers, data=json.dumps(body)) as response:
-            response_text = await response.text()
-            return response_text
-
-
 #Calling google function to get image then get Bytes IO object
 async def call_cloud_function(session, image_url):
     # Prepare the request URL and headers
@@ -287,21 +273,23 @@ async def rank_images(request: RequestModel):
             - There is an error opening or processing an image.
     """
     try:
-        now = datetime.now()
-        current_time = now.strftime("%H:%M:%S:%SS")
-        print("Start Time =", current_time)
         global data
         data = []
-        bytesData = await post_image_urls(request.links)
-        bytes_data_json = json.loads(bytesData)
-        bytes_data_array = bytes_data_json['data']
-        print(bytes_data_array[0])
-        for image in bytes_data_array:
-            base64_str = image['image_bytes']
-            image_bytes = base64.b64decode(base64_str)
-            image_bytes_io = BytesIO(image_bytes)
-            embedding = extract_embedding(image_bytes_io)
-            data.append({'image_url': image['image_url'], 'embedding': embedding})
+        # print(request.query)
+        # print(request.links)
+        # df = await callConcurrent(request.links)
+        # target_embedding = gen_target_embedding(request.query)
+
+        # image_urls = get_matches(target_embedding, df)
+        num_threads =5
+
+        # Split the image URLs into chunks for each thread
+        chunks = [request.links[i::num_threads] for i in range(num_threads)]
+
+        # Create a ThreadPoolExecutor to handle parallel requests
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            # Run the thread_main function for each chunk of image URLs in parallel
+            executor.map(thread_main, chunks)
 
         print('All threads are done!')
         print(len(data))
@@ -311,9 +299,6 @@ async def rank_images(request: RequestModel):
         target_embedding = gen_target_embedding(request.query)
         image_urls = get_matches(target_embedding, df)
         print(image_urls)
-        now = datetime.now()
-        current_time = now.strftime("%H:%M:%S:%SS")
-        print("Final End Time =", current_time)
         return {"ranked_images": image_urls}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -1,49 +1,35 @@
-import requests
-from io import BytesIO
-from flask import jsonify
 import base64
-from concurrent.futures import ThreadPoolExecutor
-import asyncio
-from datetime import datetime
-import aiohttp
 import ssl
-data = []
-#Calling google function to get image then get Bytes IO object
+import aiohttp
+import asyncio
+from io import BytesIO
+from datetime import datetime
+from flask import jsonify, Flask, request
+
 async def call_cloud_function(session, image_url):
-    # Prepare the request URL and headers
-    response = requests.get(image_url)
-    bytes_stream = BytesIO(response.content)
+    async with session.get(image_url) as response:
+        image_data = await response.read()
+
+    bytes_stream = BytesIO(image_data)
     base64_bytes = base64.b64encode(bytes_stream.read())
-    # Decode the bytes to a string before passing to jsonify
     base64_str = base64_bytes.decode('utf-8')
+
     return {'image_bytes': base64_str, 'image_url': image_url, 'status': 'success', 'size': len(base64_bytes)}
-    
-#Thread part to trigger download of image urls via google cloud function
+
 async def handle_urls(image_urls):
-    # Create an SSL context to bypass SSL verification
     ssl_context = ssl.create_default_context()
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
-    
+
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
         tasks = [call_cloud_function(session, image_url) for image_url in image_urls]
         results = await asyncio.gather(*tasks)
-        # Print the results of each call
-        for result in results:
-            data.append(result)
 
-def main_thread(image_urls):
-    now = datetime.now()
-    current_time = now.strftime("%H:%M:%S:%SS")
-    print("Start Time =", current_time)
-    asyncio.run(handle_urls(image_urls))
-    now = datetime.now()
-    current_time = now.strftime("%H:%M:%S:%SS")
-    print("Final End Time =", current_time)
+    return results
 
-def convert_url_to_bytes_stream(request):
-    # reqData = request.get_json()
-    # image_url = reqData['image_url']
+def convert_url_to_bytes_stream():
+    # req_data = request.get_json()
+    # image_urls = req_data['image_url']
     image_url  = [
  "https://di2ponv0v5otw.cloudfront.net/posts/2022/05/04/6272f4a13751f5ea760832fb/s_wp_6272fa5c941f175a1ce82807.webp",
 "https://di2ponv0v5otw.cloudfront.net/posts/2022/11/10/636da131046d74db9f3b6e49/s_wp_636da1b1dff94d691895db7f.webp",
@@ -117,17 +103,18 @@ def convert_url_to_bytes_stream(request):
  "https://cf-assets-thredup.thredup.com/assets/463632789/complimentary.jpg",
 "https://cf-assets-thredup.thredup.com/assets/478344411/complimentary.jpg",
     ]
-    global data
-    data = []
-    num_threads = 10
-    chunks = [image_url[i::num_threads] for i in range(num_threads)]
-    with ThreadPoolExecutor(max_workers=num_threads) as executor:
-        executor.map(main_thread, chunks)
-    print("All threads done")
-    return jsonify({"data": data})
+    start_time = datetime.now().strftime("%H:%M:%S:%f")
+    print("Start Time =", start_time)
+
+    results = asyncio.run(handle_urls(image_url))
+
+    end_time = datetime.now().strftime("%H:%M:%S:%f")
+    print("End Time =", end_time)
+
+    return jsonify({"data": results})
 
 def main(request):
-    return convert_url_to_bytes_stream(request)
+    return convert_url_to_bytes_stream()
 
 if __name__ == "__main__":
     main({})
